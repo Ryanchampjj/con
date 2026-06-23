@@ -1,0 +1,19 @@
+{
+  "name": "ลงเวลาคนงาน",
+  "short_name": "ลงเวลาคนงาน",
+  "description": "เช็คอิน/เช็คเอาท์คนงานก่อสร้าง",
+  "start_url": ".",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

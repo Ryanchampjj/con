@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>ลงเวลาคนงาน</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
+<link rel="icon" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ลงเวลาคนงาน">
+
+<style>
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body {
+    font-family:'Sarabun','Prompt',-apple-system,'Segoe UI',sans-serif;
+    margin:0; min-height:100vh; background:#0f172a; color:#f1f5f9;
+    display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .wrap { width:100%; max-width:380px; text-align:center; }
+  .icon { width:120px; height:120px; border-radius:28px; box-shadow:0 12px 30px rgba(0,0,0,.45); margin-bottom:18px; }
+  h1 { font-size:24px; margin:0 0 4px; }
+  .sub { color:#94a3b8; font-size:14px; margin-bottom:28px; }
+  .btn {
+    width:100%; padding:16px; border:none; border-radius:14px; font-size:17px; font-weight:700;
+    color:#fff; background:#6366f1; cursor:pointer; transition:opacity .15s;
+    font-family:inherit;
+  }
+  .btn:active { opacity:.85; }
+  .btn:disabled { opacity:.45; cursor:not-allowed; }
+  .hint { margin-top:18px; font-size:13px; color:#94a3b8; line-height:1.7; }
+  .install {
+    margin-top:22px; padding:14px 16px; background:#1e293b; border:1px solid #334155;
+    border-radius:14px; font-size:13.5px; color:#cbd5e1; line-height:1.7; text-align:left; display:none;
+  }
+  .install b { color:#f1f5f9; }
+  .install .step { display:block; margin-top:4px; }
+  .warn {
+    margin-top:18px; padding:14px 16px; background:#7f1d1d; border:1px solid #b91c1c;
+    border-radius:14px; font-size:13.5px; color:#fecaca; line-height:1.7; text-align:left; display:none;
+  }
+  .warn b { color:#fff; }
+  .copy {
+    margin-top:10px; width:100%; padding:11px; border:none; border-radius:10px;
+    background:#475569; color:#fff; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <img class="icon" src="icon.png" alt="ไอคอนแอป">
+  <h1>ลงเวลาคนงาน</h1>
+  <div class="sub">เช็คอิน / เช็คเอาท์ คนงานก่อสร้าง</div>
+
+  <button class="btn" id="openBtn" disabled>กำลังเตรียม...</button>
+
+  <div class="hint" id="hint"></div>
+
+  <div class="install" id="installBox"></div>
+
+  <div class="warn" id="lineWarn">
+    <b>⚠️ คุณกำลังเปิดในแอป LINE</b><br>
+    การติดตั้งแอปจะใช้ไม่ได้ในเบราว์เซอร์ของ LINE<br>
+    กรุณากดเมนู <b>⋮</b> (มุมขวาบน) แล้วเลือก <b>"เปิดด้วยเบราว์เซอร์อื่น"</b> (Chrome / Safari) ก่อน
+    <button class="copy" id="copyBtn">คัดลอกลิงก์หน้านี้</button>
+  </div>
+</div>
+
+<script>
+  /*** ⬇️⬇️ วาง Web app URL (ลงท้าย /exec) ของคุณตรงนี้ ⬇️⬇️ ***/
+  var APP_URL = "https://script.google.com/macros/s/XXXXXXXXXXXXXXXXXXXX/exec";
+  /*** ⬆️⬆️ แก้บน GitHub ได้ด้วยปุ่มดินสอ ✏️ ⬆️⬆️ ***/
+
+  // ลงทะเบียน service worker (จำเป็นต่อปุ่ม "ติดตั้งแอป")
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function () {});
+    });
+  }
+
+  var ua = navigator.userAgent || '';
+  var isIOS = /iPhone|iPad|iPod/i.test(ua);
+  var isAndroid = /Android/i.test(ua);
+  var inLine = /Line/i.test(ua);
+  var standalone = window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+
+  var openBtn = document.getElementById('openBtn');
+  var hint = document.getElementById('hint');
+  var installBox = document.getElementById('installBox');
+
+  function openApp() {
+    if (APP_URL.indexOf('XXXXX') !== -1) {
+      alert('ยังไม่ได้ตั้งค่าลิงก์เว็บแอป (APP_URL) ในไฟล์ index.html');
+      return;
+    }
+    window.location.href = APP_URL;
+  }
+  openBtn.addEventListener('click', openApp);
+
+  // เปิดใน LINE → เตือนให้ย้ายเบราว์เซอร์ก่อน
+  if (inLine) {
+    document.getElementById('lineWarn').style.display = 'block';
+    document.getElementById('copyBtn').addEventListener('click', function () {
+      var url = window.location.href;
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(function () { this.textContent = 'คัดลอกแล้ว ✓'; }.bind(this));
+      } else {
+        prompt('คัดลอกลิงก์นี้:', url);
+      }
+    });
+  }
+
+  // ปุ่มเปิด: ถ้าเปิดจากแอปที่ติดตั้งแล้ว ใช้ได้ทันที / ถ้าเปิดในเบราว์เซอร์ รอ 4 วิให้ manifest โหลดทัน
+  if (standalone) {
+    openBtn.disabled = false;
+    openBtn.textContent = 'เปิดแอป';
+    hint.textContent = '';
+  } else {
+    var n = 4;
+    openBtn.textContent = 'เปิดแอป (รอ ' + n + ' วิ)';
+    var t = setInterval(function () {
+      n--;
+      if (n <= 0) {
+        clearInterval(t);
+        openBtn.disabled = false;
+        openBtn.textContent = 'เปิดแอป';
+      } else {
+        openBtn.textContent = 'เปิดแอป (รอ ' + n + ' วิ)';
+      }
+    }, 1000);
+
+    // คำแนะนำติดตั้งลงหน้าจอ (ต่างกันตามเครื่อง)
+    if (!inLine) {
+      installBox.style.display = 'block';
+      if (isIOS) {
+        installBox.innerHTML =
+          '<b>ติดตั้งลงหน้าจอ (iPhone / iPad)</b>' +
+          '<span class="step">1. ต้องเปิดด้วย <b>Safari</b> เท่านั้น</span>' +
+          '<span class="step">2. กดปุ่ม <b>แชร์</b> (ไอคอนสี่เหลี่ยมมีลูกศรขึ้น)</span>' +
+          '<span class="step">3. เลือก <b>"เพิ่มไปยังหน้าจอเริ่มต้น"</b></span>';
+      } else if (isAndroid) {
+        installBox.innerHTML =
+          '<b>ติดตั้งลงหน้าจอ (Android)</b>' +
+          '<span class="step">• รอปุ่ม/แถบ <b>"ติดตั้งแอป"</b> ของ Chrome สักครู่ แล้วกด</span>' +
+          '<span class="step">• หรือกดเมนู <b>⋮</b> (มุมขวาบน) → <b>"เพิ่มลงในหน้าจอหลัก / ติดตั้งแอป"</b></span>';
+      } else {
+        installBox.innerHTML =
+          '<b>ติดตั้งลงหน้าจอ</b>' +
+          '<span class="step">เปิดหน้านี้บนมือถือด้วย Chrome (Android) หรือ Safari (iPhone) แล้วเลือก "เพิ่มลงในหน้าจอหลัก"</span>';
+      }
+    }
+  }
+</script>
+</body>
+</html>
