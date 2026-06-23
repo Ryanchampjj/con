@@ -1,5 +1,5 @@
 // service worker ขั้นต่ำ — จำเป็นเพื่อให้ Chrome เด้งปุ่ม "ติดตั้งแอป"
-const CACHE = 'worker-checkin-v1';
+const CACHE = 'worker-checkin-v2';
 const SHELL = ['./', './index.html', './manifest.json', './icon.png'];
 
 self.addEventListener('install', (e) => {
